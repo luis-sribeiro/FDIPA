@@ -158,58 +158,6 @@ class NeuralNet(object):
             retornoAux = sigmoid(np.dot(w[-1], retornoAux))
             retorno = retorno + np.linalg.norm(retornoAux - y)**2
         return (1/(2*len(mini_batch))) * retorno, -(np.linalg.norm(w)**2)/2
-    
-def BuscalinearA(self, fun, dfun, x0, f0, g0, df0, dg0, d, L):
-    #global asa;
-    # Revisado 04/12/2012
-
-    # TipoBusca:
-    # 0:    Sem busca linear.
-    # 1:    Busca linear de Armijo em X.F .
-    # 2:    Busca linear de Armijo nas restriçoes e em X.F .
-
-    n = len(x0)
-    m = len(L)
-    t = 1
-    xn = x0 + t*d
-    fn , gn = feval(fun,xn)  
-
-
-    mi = 0.7    #Passo de Armijo's
-    nus = 0.3 #fator de redução da inclinação da reta secante
-    cf = f0   #Ponto inicial da função potencial
-    cg = g0     #Ponto inicial das restrições
-    cas = nus*df0*d #Coeficiente da reta secante da função potencial
-    #df0' é a transposição de df0
-
-    #Newton com busca linear e verificaçao nas Restriçoes.(x=>0 e F=>0)
-    sigo = 1 
-    reinicio = 0
-
-    while sigo:
-        counter[5] = counter[5] + 1
-        sn = 0
-        for i in range(m):
-            if gn(i) > 0:
-                sn = sn + 1
-        if sn == 0:
-            fs = cf + cas*t
-            if fn > fs:
-                reinicio = 0
-                t = t*mi
-                xn = x0 + t*d
-                fn , gn = feval(fun,xn)
-                counter[2] = counter[2] + 1
-            else:
-                sigo = 0
-        else:
-            t=t*mi
-            xn = x0 + t*d
-            fn , gn = feval(fun,xn)
-            counter[2] = counter[2] + 1
-            reinicio = 1
-    counter[5]=counter[5] -1;    
-    return t, xn, fn, gn, counter, reinicio 
 
 # funcao de ativacao sigmoide
 def sigmoid(z):

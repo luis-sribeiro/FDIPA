@@ -126,4 +126,4 @@ def  FDIPA(fun, dfun, ddfun, x0, L0, tol, mini_batch):
             B0 = B0 + (y.dot(y.T)) / (y.T.dot(s)) - (np.linalg.multi_dot([B0,s,s.T,B0.T])/(np.linalg.multi_dot([s.T, B0, s])))
 
 
-            return [xn, L, fn, gn, counter, tempo, t, d, r0]
+            return [xn, L, fn, gn, counter, t, d, r0]
