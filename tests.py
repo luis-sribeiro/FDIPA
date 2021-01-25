@@ -6,7 +6,7 @@ from sklearn import datasets
 
 #Color map for plotting figures
 cmap = matplotlib.colors.ListedColormap(['blue', 'red'])
-
+x = 6
 #Plotting style
 matplotlib.style.use('ggplot')
 
