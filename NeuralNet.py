@@ -69,7 +69,55 @@ class NeuralNet(object):
         
         
         self.weights = [w-(eta/len(mini_batch))*nw for w, nw in zip(self.weights, nabla_w)]
+
+    def backpropBloco(self, mini_batch):
+        """Retorna `nabla_w` representando o
+         gradiente para a função de custo C_x. `nabla_w` é uma lista de camadas de matrizes numpy,
+         semelhante a  `self.weights`."""
+
+        nabla_w = [np.zeros(w.shape) for w in self.weights]
         
+        # Retirar do mini_batch o conjunto dos x's de entrada para montar  o activation com
+        # a primeira linha formada por 1's
+        # Feedforward
+        activation = np.zeros(len(x)+1)
+        activation[0] = 1
+        activation[1:] = x
+
+        # Lista para armazenar todas as ativações, camada por camada
+        activations = [activation] 
+
+        # Lista para armazenar todos os vetores z, camada por camada
+        zs = [] 
+        for i in range(0,len(self.weights)-1):
+            w = self.weights[i]
+            z = np.dot(w, activation)
+            zs.append(z)
+            activation = sigmoid(z)
+            activation[0,:] = 1
+            activations.append(activation)
+
+        w = self.weights[-1]
+        z = np.dot(w, activation)
+        zs.append(z)
+        activation = sigmoid(z)
+        activations.append(activation)
+
+        
+        # Backward pass
+        delta = self.cost_derivative(activations[-1], y) * sigmoid_prime(zs[-1])
+        nabla_w[-1] = np.dot(delta, activations[-2].transpose())
+        
+        # Aqui, l = 1 significa a última camada de neurônios, l = 2 é a
+        # segunda e assim por diante. 
+        for l in range(2, self.num_layers):
+            z = zs[-l]
+            sp = sigmoid_prime(z)
+            delta = np.dot(self.weights[-l+1].transpose(), delta) * sp
+            nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
+            
+        return nabla_w        
+
     def backprop(self, x, y):
         """Retorna `nabla_w` representando o
          gradiente para a função de custo C_x. `nabla_w` é uma lista de camadas de matrizes numpy,
@@ -141,6 +189,7 @@ class NeuralNet(object):
             end = start + w.size
             weightsAux.append(v[start:end].reshape(w.shape))
             start = end
+            
     #Nesse caso, deverá ser realizada a transformacao antes
     #de fazer a computacao da rede
     def feedforwardFDIPA(self, x, y, w, mini_batch):
