@@ -32,8 +32,6 @@ class NeuralNet(object):
             a[0 , :] = 1
         return sigmoid(np.dot(self.weights[-1],a))
     
-    def 
-    
     def feedforward(self, a):
         #força o primeiro neuronio de cada camada ser 1 uma vez que representa o bias
         a = np.concatenate(([1], a), axis=0)
@@ -71,7 +69,8 @@ class NeuralNet(object):
         O 'mini-batch' é uma lista de tuplas '(x,y)', 'eta' é a taxa de aprendizado.        """
 
         nabla_w = [np.zeros(w.shape) for w in self.weights]
-        
+ 
+        #mini_batch = [X_Teste, y_teste]
         for x, y in mini_batch:
             delta_nabla_w = self.backprop(x, y)            
             nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
@@ -89,10 +88,12 @@ class NeuralNet(object):
         # Retirar do mini_batch o conjunto dos x's de entrada para montar  o activation com
         # a primeira linha formada por 1's
         # Feedforward
-        activation = np.zeros(len(x)+1)
-        activation[0] = 1
-        activation[1:] = x
+        activation = mini_batch[0]
+        uns = np.ones((np.shape(activation)[0],1))
+        activation = np.concatenate((uns, X_train), axis = 1)
+        activation = activation.T
 
+        y = mini_batch[1]
         # Lista para armazenar todas as ativações, camada por camada
         activations = [activation] 
 
@@ -114,6 +115,7 @@ class NeuralNet(object):
 
         
         # Backward pass
+        
         delta = self.cost_derivative(activations[-1], y) * sigmoid_prime(zs[-1])
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
         
@@ -203,10 +205,14 @@ class NeuralNet(object):
     #de fazer a computacao da rede
     #To Do: obter o tamanho do data set, decidir como o x e o y serão passados para decidir como o calculo será feito
 
-    def feedforwardFDIPA(self, x, y, w, mini_batch):
-        n = 500 #Tamanho do dataset alguma forma de obter esse tamanho de dataSet
-        x = #alguma forma de transformar o x em uma matriz com os dados de treinamento
-        a = cp.copy(x)
+    def feedforwardFDIPA(self, w, mini_batch):
+        n = mini_batch[0].shape[0] #Tamanho do dataset 
+
+        a = cp.copy(mini_batch[0])
+        uns = np.ones((np.shape(a)[0],1))
+        a = np.concatenate((uns, a), axis = 1)
+        a = a.T
+        
         start = 0
         for i in range(0, len(self.weights)-1):
             end = start + self.weights[i].size
@@ -214,20 +220,7 @@ class NeuralNet(object):
             start = end
             a[0 , :] = 1
         a = sigmoid(np.dot(w[0,start:], a))
-        return (1/(2*n))*np.linalg.norm(a-y,'fro'), -(np.linalg.norm(w)**2)/2
-#        for x, y in mini_batch:	
-#            retornoAux = np.zeros(len(x) + 1)
-#            retornoAux[1:] = np.copy(x)
-#            #força o primeiro neuronio de cada camada ser 1 uma vez que representa o bias
-#            retornoAux[0] = 1
-#            contador = 0
-#            for i in range(0,len(self.weights)-1):
-#                retornoAux = sigmoid(np.dot(w[0,contador:contador+self.weights[i].size].reshape(self.weights[i].shape) , retornoAux))
-#                contador = contador + self.weights[i].size + 1
-#                retornoAux[0] = 1
-#            retornoAux = sigmoid(np.dot(w[-1], retornoAux))
-#            retorno = retorno + np.linalg.norm(retornoAux - y)**2
-#        return (1/(2*len(mini_batch))) * retorno, -(np.linalg.norm(w)**2)/2
+        return (1/(2*n))*np.linalg.norm(a-y,'fro')**2, -(np.linalg.norm(w)**2)/2
 
 # funcao de ativacao sigmoide
 def sigmoid(z):
