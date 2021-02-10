@@ -47,21 +47,21 @@ class NeuralNet(object):
         training_data = list(training_data) #lista (x,y) que representam 
                                             #entradas(x) e saídas desejadas(y) para treinamento.
         n = len(training_data)
-        
         if test_data:
             test_data = list(test_data)
             n_test = len(test_data)
+            
         for j in range(epochs):
             random.shuffle(training_data)
             mini_batches = [training_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)]
             
-            for mini_batch in mini_batches:
+            for mini_batch in mini_batches:            
                 self.update_mini_batch(mini_batch, eta)
             
             if test_data:
-                print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test))
+               print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test))
             else:
-                print("Epoch {} finalizada".format(j))
+               print("Epoch {} finalizada".format(j))
        
         
     def update_mini_batch(self, mini_batch, eta):
@@ -70,12 +70,21 @@ class NeuralNet(object):
         O 'mini-batch' é uma lista de tuplas '(x,y)', 'eta' é a taxa de aprendizado.        """
 
         nabla_w = [np.zeros(w.shape) for w in self.weights]
- 
-        for x, y in mini_batch:
-            delta_nabla_w = self.backprop(x, y)            
-            nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
         
+        # for x, y in mini_batch:
+        #     delta_nabla_w = self.backprop(x, y)            
+        #     nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+
+        #Obtem matriz dos dados de entrada separado X e Y         
+        x_train = np.zeros((len(mini_batch), len(mini_batch[0][0])))
+        y_train = np.zeros((len(mini_batch), len(mini_batch[0][1])))
         
+        for i in range(0, len(mini_batch)):
+            x_train[i] = mini_batch[i][0]
+            y_train[i] = mini_batch[i][1]
+
+        nabla_w = self.backpropFDIPA(self.weights, x_train, y_train)
+
         self.weights = [w-(eta/len(mini_batch))*nw for w, nw in zip(self.weights, nabla_w)]
 
     def backprop(self, x, y):
@@ -114,7 +123,7 @@ class NeuralNet(object):
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
         
         # Aqui, l = 1 significa a última camada de neurônios, l = 2 é a
-        # segunda e assim por diante. 
+        # penultima e assim por diante. 
         for l in range(2, self.num_layers):
             z = zs[-l]
             sp = sigmoid_prime(z)
@@ -123,24 +132,21 @@ class NeuralNet(object):
             
         return nabla_w
 
-    def backpropFDIPA(self, w, mini_batch):
+    def backpropFDIPA(self, w, x, y):
         """Retorna `nabla_w` representando o
          gradiente para a função de custo C_x. `nabla_w` é uma lista de camadas de matrizes numpy,
          semelhante a  `self.weights`."""
 
         nabla_w = [np.zeros(waux.shape) for waux in w]
         
-        # Retirar do mini_batch o conjunto dos x's de entrada para montar o activation com
-        # a primeira linha formada por 1's
         # Feedforward
-        activation = mini_batch[0]
+        activation = x
         uns = np.ones((np.shape(activation)[0],1))
         activation = np.concatenate((uns, activation), axis = 1)
         activation = activation.T
-
-        y = mini_batch[1]
         # Lista para armazenar todas as ativações, camada por camada
         activations = [activation] 
+        y = y.T
 
         # Lista para armazenar todos os vetores z, camada por camada
         zs = [] 
