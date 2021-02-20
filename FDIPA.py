@@ -1,6 +1,7 @@
 import numpy as np
 
-def  FDIPA(fun, dfun, ddfun, x0, L0, tol, mini_batch):
+#Todo : Passar
+def  FDIPA(self, fun, dfun, ddfun, x0, L0, tol, mini_batch):
     ################################################################
     ###################      Dados iniciais     ####################
     ################################################################
@@ -125,5 +126,4 @@ def  FDIPA(fun, dfun, ddfun, x0, L0, tol, mini_batch):
             s = x0 - x00
             B0 = B0 + (y.dot(y.T)) / (y.T.dot(s)) - (np.linalg.multi_dot([B0,s,s.T,B0.T])/(np.linalg.multi_dot([s.T, B0, s])))
 
-
-            return [xn, L, fn, gn, counter, t, d, r0]
+    return [xn, L, fn, gn, counter, t, d, r0]

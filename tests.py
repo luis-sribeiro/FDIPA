@@ -25,11 +25,11 @@ y_train = y_train_aux
 # y_train = y_train.T
 
 
-#plt.figure(figsize=(19.20,10.80))
-#plt.ylim(-1.5,1.5)
-#plt.xlim(-1.5,1.5)
-#plt.scatter(X_train[:,0], X_train[:,1], c = y_train, cmap=cmap)
-#plt.show()
+plt.figure(figsize=(19.20,10.80))
+plt.ylim(-1.5,1.5)
+plt.xlim(-1.5,1.5)
+plt.scatter(X_train[:,0], X_train[:,1], c = y_train, cmap=cmap)
+plt.show()
 #Olhar como definir o dataSet pra entrada pra rede neural
 #dataSet = [X_train, y_train]
 
@@ -42,18 +42,16 @@ dataSet1 = list(dataSet1)
 
 net = NeuralNet([2, 5, 1])
  
-epochs = 1000
-mini_batch_size = 100
-eta = 0.7
+epochs = 5000
+mini_batch_size = 20
+eta = 0.1
 
 print("comeco:")
-
-net.SGD(zip(X_train, y_train), epochs, mini_batch_size, eta)
-
+net.SGD(zip(X_train[0:400,:], y_train[0:400]), epochs, mini_batch_size, eta)
 print("fim")
 
 
 #Teste:
-# for x, y in dataSet1:
-#    r = net.feedforward(x)
-#    print("rede: %r \t yEsperado = %r"% (np.round(r[0]), y[0]))
+for i in range(400,500):
+   r = net.feedforward(X_train[i,:])
+   print("rede: %r \t yEsperado = %r"% (r[0], y_train[i]))
