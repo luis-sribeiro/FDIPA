@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Feb 8 13:28:51 2020
-
-@author: vitor
-"""
-
 import numpy as np
 import random
 import copy as cp
@@ -86,6 +79,9 @@ class NeuralNet(object):
                print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test))
             else:
                print("Epoch {} finalizada".format(j))
+
+            #if j % 100 == 0:
+            #    print("Epoch {}/{}  | Acurácia {}".format(j, epochs, self.feedfowardbatch(training_data)))
        
     
     #Todo : Atualizar essa funcao para trocar  o parametro "mini_batch" por "x_train" e "y_train"
@@ -379,6 +375,23 @@ class NeuralNet(object):
                 s = x0 - x00
                 B0 = B0 + (y.dot(y.T)) / (y.T.dot(s)) - (np.linalg.multi_dot([B0,s,s.T,B0.T])/(np.linalg.multi_dot([s.T, B0, s])))
         return [xn, L, fn, gn, counter, t, d, r0]
+
+    def SGD2(self, X, y, epochs, mini_batch_size, eta, test_data = None):
+        n = len(X)
+        display_step = 50
+        for j in range(epochs):
+            p = np.random.permutation(len(X))
+            X = X[p]
+            y = y[p]
+            mini_batches = [(list(zip(X[k:k+mini_batch_size], y[k:k+mini_batch_size]))) for k in range(0, n, mini_batch_size)]
+            
+            for mini_batch in mini_batches:            
+                self.update_mini_batch(mini_batch, eta)
+
+            if j % display_step == 0:
+                predictions = np.asarray([self.feedforward(x) for x in X])
+                accuracy = np.sum(((predictions >= 0.5) == y))/X.shape[0]
+                print("Epoch {}/{}  | Acurácia {:.4f}".format(j, epochs, accuracy))
 
 # funcao de ativacao sigmoide
 def sigmoid(z):
