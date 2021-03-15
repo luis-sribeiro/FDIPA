@@ -42,13 +42,14 @@ class NeuralNet(object):
             X = X[p]
             y = y[p]
             mini_batches = [(list(zip(X[k:k+mini_batch_size], y[k:k+mini_batch_size]))) for k in range(0, n, mini_batch_size)]
-
-            predictions = np.asarray([self.feedforward(x) for x in X])
-            accuracy = np.sum(((predictions >= 0.5) == y))/X.shape[0]
-            print("Inicio | Acurácia {:.4f}".format(accuracy))
-
-            for mini_batch in mini_batches:            
+            # predictions = np.asarray([self.feedforward(x) for x in X])
+            # accuracy = np.sum(((predictions >= 0.5) == y))/X.shape[0]
+            # print("Inicio | Acurácia {:.4f}".format(accuracy))
+            # cont = 0
+            for mini_batch in mini_batches:
+                # cont += 1            
                 self.update_mini_batch_FDIPA(mini_batch, eta)
+                # print(cont)
 
             if j % display_step == 0:
                 predictions = np.asarray([self.feedforward(x) for x in X])
@@ -94,9 +95,7 @@ class NeuralNet(object):
         
         L0 = np.ones([1])
         tol = 5
-        # nabla_w = self.backpropFDIPA(self.weights, x_train, y_train)        
         self.weights = self.FDIPA(self.weights, L0, tol, x_train, y_train)
-        # self.weights = [w-(eta/len(mini_batch))*nw for w, nw in zip(self.weights, nabla_w)]
 
     #To Do: Trocar o parametro "training_data" por x_train e y_train separado 
     #Stochastic Gradient Descent
@@ -125,8 +124,7 @@ class NeuralNet(object):
 
             #if j % 100 == 0:
             #    print("Epoch {}/{}  | Acurácia {}".format(j, epochs, self.feedfowardbatch(training_data)))
-       
-    
+          
     #Todo : Atualizar essa funcao para trocar  o parametro "mini_batch" por "x_train" e "y_train"
     def update_mini_batch(self, mini_batch, eta):
         """ Atualiza os pesos e bias da rede aplicando 
@@ -309,7 +307,7 @@ class NeuralNet(object):
         ################################################################
         ###################      Dados iniciais     ####################
         ################################################################
-
+        # print("INICIO FDIPA")
         counter = np.zeros([5])
         Buscatol = 0
         vc = 0
@@ -335,7 +333,6 @@ class NeuralNet(object):
 
         epsi = 0.8
 
-        siga = 1
         reinicio = 1
 
         d1 = np.ones_like(x0)
@@ -345,7 +342,7 @@ class NeuralNet(object):
         ###################      FDIPA         ####################
         ###########################################################
         cont = 0
-        while siga == 1 and cont < tol :
+        while cont < tol :
             cont = cont + 1
 
             counter[0] = counter[0] + 1
@@ -368,12 +365,18 @@ class NeuralNet(object):
             B00 = np.linalg.inv(M)
 
             #L0 = lambda, g0 = G
-            BK = B00 + np.linalg.multi_dot([B00, dg0, dg0.T,B00]) / (g0/L0 - np.linalg.multi_dot([dg0.T, B00, dg0])) 
-          
+
+            # print("div:")
+            # print(div)          
+            div = (g0/L0 - np.linalg.multi_dot([dg0.T, B00, dg0]))
+
+            BK = B00 + np.linalg.multi_dot([B00, dg0, dg0.T, B00]) / div
             #Primeira direcao d_alpha
             dx1 = -(BK.dot(df0))
             
-            if np.linalg.norm(dx1) < 10**(-4):
+            if np.linalg.norm(dx1) < 10**(-6):
+                # print("saida1")
+                # print(cont)
                 return self.vet2mat(x0)
             else:
                 #Segunda direcao d_beta
@@ -412,7 +415,10 @@ class NeuralNet(object):
                 ################### Criterio de Parada ####################
                 ###########################################################
                 
-                siga = (np.linalg.norm(f0-fn) > 10**(-4))
+                if (np.linalg.norm(f0-fn) < 10**(-6)):
+                    # print("saida2")
+                    # print(cont)
+                    return self.vet2mat(xn)
                 
                 ###########################################################
                 ###################   Parada Forcada   ####################
@@ -435,6 +441,8 @@ class NeuralNet(object):
                 y = df0 - df00
                 s = x0 - x00
                 B0 = B0 + (y.dot(y.T)) / (y.T.dot(s)) - (np.linalg.multi_dot([B0,s,s.T,B0.T])/(np.linalg.multi_dot([s.T, B0, s])))
+        # print("saida3")
+        # print(cont)
         return self.vet2mat(xn)
         # return [xn, L, fn, gn, counter, t, d, r0]
 
@@ -447,10 +455,6 @@ class NeuralNet(object):
             y = y[p]
             mini_batches = [(list(zip(X[k:k+mini_batch_size], y[k:k+mini_batch_size]))) for k in range(0, n, mini_batch_size)]
             
-            predictions = np.asarray([self.feedforward(x) for x in X])
-            accuracy = np.sum(((predictions >= 0.5) == y))/X.shape[0]
-            print("Inicio | Acurácia {:.4f}".format(accuracy))
-
             for mini_batch in mini_batches:            
                 self.update_mini_batch(mini_batch, eta)
 
@@ -461,8 +465,20 @@ class NeuralNet(object):
 
 # funcao de ativacao sigmoide
 def sigmoid(z):
-    return 1.0/(1.0+np.exp(-z))
+    return 1.0/(1.0 + np.exp(-z))
+
+# def sigmoid(z):
+#     sig = np.vectorize(sigmoidAux)
+#     return sig(z)
     
+# def sigmoidAux(z):
+#     if z > 20:
+#         return 1
+#     elif z < -20:
+#         return 0
+#     else:
+#         return 1.0/(1.0 + np.exp(-z))
+
 # Função para retornar as derivadas da função Sigmóide
 def sigmoid_prime(z):
     return sigmoid(z)*(1-sigmoid(z))

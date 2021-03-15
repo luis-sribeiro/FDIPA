@@ -43,13 +43,14 @@ dataSet1 = list(dataSet1)
 net = NeuralNet([2, 5, 1])
  
 epochs = 1000
-mini_batch_size = 20
+mini_batch_size = 100
+# mini_batch_size = n_samples
 eta = 0.1
 
 print("comeco:")
 #net.SGD(zip(X_train[0:400,:], y_train[0:400]), epochs, mini_batch_size, eta)
-net.SGD2(X_train, y_train, epochs, mini_batch_size, eta)
-# net.trainFDIPA(X_train, y_train, epochs, mini_batch_size, eta)
+# net.SGD2(X_train, y_train, epochs, mini_batch_size, eta)
+net.trainFDIPA(X_train, y_train, epochs, mini_batch_size, eta)
 print("fim")
 
 
