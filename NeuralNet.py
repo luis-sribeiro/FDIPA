@@ -4,7 +4,6 @@ import copy as cp
 
 #classe que representa uma rede neural
 class NeuralNet(object):
-
     def __init__(self, sizes):
         """sizes contem o numero de neuronios em cada camada. 
         Ex: se sizes = [2,3,1]  entao a rede vai ter 2 neuronios
@@ -34,26 +33,70 @@ class NeuralNet(object):
             a = sigmoid(np.dot(self.weights[i], a))
             a[0] = 1
         return sigmoid(np.dot(self.weights[-1], a))
-    
-    def trainFDIPA(self, training_data, epochs, mini_batch_size, test_data = None):
-        training_data = list(training_data) #lista (x,y) que representam 
-                                            #entradas(x) e saídas desejadas(y) para treinamento.
-        n = len(training_data)
-        if test_data:
-            test_data = list(test_data)
-            n_test = len(test_data)
 
+    def trainFDIPA(self, X, y, epochs, mini_batch_size, eta, test_data = None):
+        n = len(X)
+        display_step = 50
         for j in range(epochs):
-            random.shuffle(training_data)
-            mini_batches = [training_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)]
-                        
+            p = np.random.permutation(len(X))
+            X = X[p]
+            y = y[p]
+            mini_batches = [(list(zip(X[k:k+mini_batch_size], y[k:k+mini_batch_size]))) for k in range(0, n, mini_batch_size)]
+
+            predictions = np.asarray([self.feedforward(x) for x in X])
+            accuracy = np.sum(((predictions >= 0.5) == y))/X.shape[0]
+            print("Inicio | Acurácia {:.4f}".format(accuracy))
+
             for mini_batch in mini_batches:            
-                self.update_mini_batch(mini_batch, eta)
+                self.update_mini_batch_FDIPA(mini_batch, eta)
+
+            if j % display_step == 0:
+                predictions = np.asarray([self.feedforward(x) for x in X])
+                accuracy = np.sum(((predictions >= 0.5) == y))/X.shape[0]
+                print("Epoch {}/{}  | Acurácia {:.4f}".format(j, epochs, accuracy))
+        # training_data = list(training_data) #lista (x,y) que representam 
+        #                                     #entradas(x) e saídas desejadas(y) para treinamento.
+        # n = len(training_data)
+        # if test_data:
+        #     test_data = list(test_data)
+        #     n_test = len(test_data)
+
+        # for j in range(epochs):
+        #     random.shuffle(training_data)
+        #     mini_batches = [training_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)]
+                        
+        #     for mini_batch in mini_batches:            
+        #         self.update_mini_batch(mini_batch, eta)
             
-            if test_data:
-               print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test))
-            else:
-               print("Epoch {} finalizada".format(j))
+        #     if test_data:
+        #        print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test))
+        #     else:
+        #        print("Epoch {} finalizada".format(j))
+
+    def update_mini_batch_FDIPA(self, mini_batch, eta):
+        """ Atualiza os pesos e bias da rede aplicando 
+        a descida do gradiente usando backpropagation para um único mini lote.
+        O 'mini-batch' é uma lista de tuplas '(x,y)', 'eta' é a taxa de aprendizado.        """
+
+        # nabla_w = [np.zeros(w.shape) for w in self.weights]
+        
+        # for x, y in mini_batch:
+        #     delta_nabla_w = self.backprop(x, y)            
+        #     nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+
+        #Obtem matriz dos dados de entrada separado X e Y         
+        x_train = np.zeros((len(mini_batch), len(mini_batch[0][0])))
+        y_train = np.zeros((len(mini_batch), len(mini_batch[0][1])))
+        
+        for i in range(0, len(mini_batch)):
+            x_train[i] = mini_batch[i][0]
+            y_train[i] = mini_batch[i][1]
+        
+        L0 = np.ones([1])
+        tol = 5
+        # nabla_w = self.backpropFDIPA(self.weights, x_train, y_train)        
+        self.weights = self.FDIPA(self.weights, L0, tol, x_train, y_train)
+        # self.weights = [w-(eta/len(mini_batch))*nw for w, nw in zip(self.weights, nabla_w)]
 
     #To Do: Trocar o parametro "training_data" por x_train e y_train separado 
     #Stochastic Gradient Descent
@@ -214,7 +257,9 @@ class NeuralNet(object):
 
     #converte matriz para vetor
     def mat2vet(self):
-        return np.concatenate(list(map(lambda a: a.reshape(-1), self.weights))) #concatena lista de arrays
+        retorno = np.concatenate(list(map(lambda a: a.reshape(-1), self.weights))) #concatena lista de arrays
+        retorno = retorno.reshape(retorno.size, 1)
+        return retorno
 
     #converte vetor para matriz    
     def vet2mat(self,v):
@@ -230,41 +275,56 @@ class NeuralNet(object):
     #de fazer a computacao da rede
     #To Do: obter o tamanho do data set, decidir como o x e o y serão passados para decidir como o calculo será feito
     #retorna f e g pro FDIPA (fun)
-    def feedforwardFDIPA(self, w, mini_batch):
-        n = mini_batch[0].shape[0] #Tamanho do mini_batch
+    #Retorna a funcao do erro quadratico e -(norma de w) ^2 / 2
+    def feedforwardFDIPA(self, w, x, y):
+        n = len(x) #Tamanho do mini_batch
 
-        a = cp.copy(mini_batch[0])
+        a = cp.copy(x)
         uns = np.ones((np.shape(a)[0],1))
         a = np.concatenate((uns, a), axis = 1)
         a = a.T
-        y = mini_batch[1]
+        
 
         for i in range(0, len(w)-1):
             a = sigmoid(np.dot(w[i] ,a))
             a[0 , :] = 1
         a = sigmoid(np.dot(w[-1], a))
-        return (1/(2*n))*np.linalg.norm(a-y,'fro')**2, -(np.linalg.norm(w)**2)/2
+        
+        # ret = a-y.T
+        # ret = np.linalg.norm(ret)        
+        return (1/(2*n))*(np.linalg.norm(a - y.T))**2, -(np.linalg.norm(mat2vet(w))**2)/2
 
     #retorna df e dg pro FDIPA(dfun)
-    def dfunFDIPA(self, w, mini_batch):
+    def dfunFDIPA(self, w, x, y):
         #recebe w como uma lista de matrizes
-        return self.backpropFDIPA(w, mini_batch), -mat2vet(w)
+        return mat2vet(self.backpropFDIPA(w, x, y)), -mat2vet(w)
     
-    def  FDIPA(self, fun, dfun, ddfun, x0, L0, tol, mini_batch):
+    def ddfunFDIPA(self, w, L):
+        return np.eye(len(w))
+    
+    #w0 passado eh o w inicial
+    #w0 eh passado na forma de matrizes do mesmo formato dos pesos da rede
+    #x e y sao dados de treinamento
+    def  FDIPA(self, w0, L0, tol, x_train, y_train):
         ################################################################
         ###################      Dados iniciais     ####################
         ################################################################
-        counter = np.zeros([1,5])
+
+        counter = np.zeros([5])
         Buscatol = 0
         vc = 0
 
-        f0 , g0 = fun(mini_batch, x0)
+        #x0 converte w0 na forma de vetor
+        x0 = mat2vet(w0)
+        f0 , g0 = self.feedforwardFDIPA(w0, x_train, y_train)
+
         counter[1] = counter[1] + 1
 
-        df0, dg0 = dfun(mini_batch, x0)
+        df0, dg0 = self.dfunFDIPA(w0, x_train, y_train)
+
         counter[2] = counter[2] + 1
 
-        B0 = ddfun(x0,L0)
+        B0 = self.ddfunFDIPA(x0, L0)
         counter[3] = counter[3] + 1
 
         n = len(x0)
@@ -284,7 +344,10 @@ class NeuralNet(object):
         ################### Inicio do Programa ####################
         ###################      FDIPA         ####################
         ###########################################################
-        while siga:
+        cont = 0
+        while siga == 1 and cont < tol :
+            cont = cont + 1
+
             counter[0] = counter[0] + 1
             ###########################################################
             ################### Calculo da direção ####################
@@ -306,17 +369,12 @@ class NeuralNet(object):
 
             #L0 = lambda, g0 = G
             BK = B00 + np.linalg.multi_dot([B00, dg0, dg0.T,B00]) / (g0/L0 - np.linalg.multi_dot([dg0.T, B00, dg0])) 
+          
             #Primeira direcao d_alpha
             dx1 = -(BK.dot(df0))
             
-            if np.linalg.norm(dx1) < 10**(-16):
-                siga = 0
-                r0   = 0  
-                xn   = x0
-                fn   = f0
-                d    = d1
-                #L    = L1
-                gn   = g0
+            if np.linalg.norm(dx1) < 10**(-4):
+                return self.vet2mat(x0)
             else:
                 #Segunda direcao d_beta
                 dx2 = (L0/g0)*np.linalg.multi_dot([BK, dg0, E])
@@ -325,7 +383,7 @@ class NeuralNet(object):
                     #rho
                     r0 = min( [phi*np.linalg.norm(dx1)**2, ((epsi-1)*(df0.T).dot(dx1))/(df0.T.dot(dx2))])
                 else:
-                    r0 = phi*(np.linalg.norm(dx1)**2)
+                    r0 = phi*(np.linalg.norm(dx1)**2)               
 
                 #direcao de busca
                 dx = dx1 + r0*dx2
@@ -333,48 +391,52 @@ class NeuralNet(object):
                 
                 t  = 1 
                 xn = x0 + t*dx
-                
-                Lx1 = -(L0/g0)*dg0.T.dot(dx1)
+
+                Lx1 = -(L0/g0)*(dg0.T.dot(dx1))
                 Lx2 = -(L0/g0)*(dg0.T.dot(dx2)+E)
                 L   = np.abs(Lx1+r0*Lx2)
 
-                fn , gn = fun(mini_batch, xn)
+                mat = self.vet2mat(xn)
+                fn , gn = self.feedforwardFDIPA(mat, x_train, y_train)
+  
                 counter[1] = counter[1] + 1
 
                 while ((fn-f0) > 0):
                     t = 0.9 * t
                     xn = x0 + t * dx
-                    fn , gn = fun(mini_batch, xn) #feedforward
+                    mat = self.vet2mat(xn)
+                    fn , gn = self.feedforwardFDIPA(mat, x_train, y_train)#feedforward
                     counter[1] = counter[1] + 1
                 
                 ###########################################################
                 ################### Criterio de Parada ####################
                 ###########################################################
                 
-                siga = (np.linalg.norm(f0-fn) > tol)
+                siga = (np.linalg.norm(f0-fn) > 10**(-4))
                 
                 ###########################################################
                 ###################   Parada Forcada   ####################
                 ###########################################################
 
-                if  counter[0] > 200:
-                    siga = 0
-
                 x00 = x0
-                L00 = L0
+                # L00 = L0
                 x0  = xn
                 
                 f0   = fn
                 g0   = gn
                 df00 = df0
-                df0 , dg0 = dfun(mini_batch, x0)
+                mat = self.vet2mat(x0)
+                df0 , dg0 = self.dfunFDIPA(mat, x_train, y_train)
+                dg0 = dg0.reshape(dg0.size,1)
+                
                 counter[2] = counter[2] + 1
                 
                 L0 = L + 10**(-8)
                 y = df0 - df00
                 s = x0 - x00
                 B0 = B0 + (y.dot(y.T)) / (y.T.dot(s)) - (np.linalg.multi_dot([B0,s,s.T,B0.T])/(np.linalg.multi_dot([s.T, B0, s])))
-        return [xn, L, fn, gn, counter, t, d, r0]
+        return self.vet2mat(xn)
+        # return [xn, L, fn, gn, counter, t, d, r0]
 
     def SGD2(self, X, y, epochs, mini_batch_size, eta, test_data = None):
         n = len(X)
@@ -385,6 +447,10 @@ class NeuralNet(object):
             y = y[p]
             mini_batches = [(list(zip(X[k:k+mini_batch_size], y[k:k+mini_batch_size]))) for k in range(0, n, mini_batch_size)]
             
+            predictions = np.asarray([self.feedforward(x) for x in X])
+            accuracy = np.sum(((predictions >= 0.5) == y))/X.shape[0]
+            print("Inicio | Acurácia {:.4f}".format(accuracy))
+
             for mini_batch in mini_batches:            
                 self.update_mini_batch(mini_batch, eta)
 
@@ -403,6 +469,8 @@ def sigmoid_prime(z):
 
 #converte matriz para vetor
 def mat2vet(w):
-    return np.concatenate(list(map(lambda a: a.reshape(-1), w))) #concatena lista de arrays
+    retorno = np.concatenate(list(map(lambda a: a.reshape(-1), w))) #concatena lista de arrays
+    retorno = retorno.reshape(retorno.size, 1)
+    return retorno 
 
 rede1 = NeuralNet([2,3,1])

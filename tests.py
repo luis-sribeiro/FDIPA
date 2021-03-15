@@ -49,6 +49,7 @@ eta = 0.1
 print("comeco:")
 #net.SGD(zip(X_train[0:400,:], y_train[0:400]), epochs, mini_batch_size, eta)
 net.SGD2(X_train, y_train, epochs, mini_batch_size, eta)
+# net.trainFDIPA(X_train, y_train, epochs, mini_batch_size, eta)
 print("fim")
 
 
