@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import copy as cp
+import time
 
 #classe que representa uma rede neural
 class NeuralNet(object):
@@ -55,24 +56,6 @@ class NeuralNet(object):
                 predictions = np.asarray([self.feedforward(x) for x in X])
                 accuracy = np.sum(((predictions >= 0.5) == y))/X.shape[0]
                 print("Epoch {}/{}  | Acurácia {:.4f}".format(j, epochs, accuracy))
-        # training_data = list(training_data) #lista (x,y) que representam 
-        #                                     #entradas(x) e saídas desejadas(y) para treinamento.
-        # n = len(training_data)
-        # if test_data:
-        #     test_data = list(test_data)
-        #     n_test = len(test_data)
-
-        # for j in range(epochs):
-        #     random.shuffle(training_data)
-        #     mini_batches = [training_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)]
-                        
-        #     for mini_batch in mini_batches:            
-        #         self.update_mini_batch(mini_batch, eta)
-            
-        #     if test_data:
-        #        print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test))
-        #     else:
-        #        print("Epoch {} finalizada".format(j))
 
     def update_mini_batch_FDIPA(self, mini_batch, eta):
         """ Atualiza os pesos e bias da rede aplicando 
@@ -94,8 +77,13 @@ class NeuralNet(object):
             y_train[i] = mini_batch[i][1]
         
         L0 = np.ones([1])
-        tol = 5
+        tol = 1
+
+        # ini = time.time()
         self.weights = self.FDIPA(self.weights, L0, tol, x_train, y_train)
+        # end = time.time()
+        # print("Tempo  FDIPA: \t\t" + str(end-ini) + " (s)" )
+
 
     #To Do: Trocar o parametro "training_data" por x_train e y_train separado 
     #Stochastic Gradient Descent
@@ -306,73 +294,96 @@ class NeuralNet(object):
     def  FDIPA(self, w0, L0, tol, x_train, y_train):
         ################################################################
         ###################      Dados iniciais     ####################
-        ################################################################
+        ################################################################    
         # print("INICIO FDIPA")
-        counter = np.zeros([5])
-        Buscatol = 0
+        # counter = np.zeros([5])
+        # Buscatol = 0
         vc = 0
 
         #x0 converte w0 na forma de vetor
+        # ini = time.time()
         x0 = mat2vet(w0)
+        # end = time.time()
+        # print("Tempo conversao mat2vet: \t\t" + str(end-ini) + " (s)" )
+
         f0 , g0 = self.feedforwardFDIPA(w0, x_train, y_train)
 
-        counter[1] = counter[1] + 1
+        # counter[1] = counter[1] + 1
 
         df0, dg0 = self.dfunFDIPA(w0, x_train, y_train)
 
-        counter[2] = counter[2] + 1
+        # counter[2] = counter[2] + 1
 
-        B0 = self.ddfunFDIPA(x0, L0)
-        counter[3] = counter[3] + 1
+        # B0 = self.ddfunFDIPA(x0, L0)
+        # counter[3] = counter[3] + 1
 
         n = len(x0)
         m = len(L0)
 
-        E = np.ones([m,1])
+        E = np.ones([m,1])        
         phi = .1 #Multiplica a norma de d1
 
         epsi = 0.8
 
-        reinicio = 1
+        # reinicio = 1
 
-        d1 = np.ones_like(x0)
+        # d1 = np.ones_like(x0)
 
         ###########################################################                                       
         ################### Inicio do Programa ####################
         ###################      FDIPA         ####################
         ###########################################################
         cont = 0
+        # B00 = B0
         while cont < tol :
             cont = cont + 1
 
-            counter[0] = counter[0] + 1
+            # counter[0] = counter[0] + 1
             ###########################################################
             ################### Calculo da direção ####################
             ###########################################################    
 
-            if vc == 0:
-                M = B0
-                vc = 0
-            else:
-                vc = vc + 1
-                M  = np.identity(n)    
+            #como nao to alterando vc, vc eh sempre 0 e M eh sempre B0
+            # if vc == 0:
+            #     M = B0
+            #     vc = 0
+            # else:
+            #     vc = vc + 1
+            #     M  = np.identity(n)    
 
             #M = B, B da formula do d0 e d1
             #B00=(M+1*(f0+0*10^(-6))*np.identity(n)).^-1
             #B00 = (M+1*(f0+0*10^(-6))*np.identity(n))
             
             #B00 = B^-1
-            B00 = np.linalg.inv(M)
+            #B00 = np.linalg.inv(M)
 
-            #L0 = lambda, g0 = G
+            #M nao eh alterado entao definimos B00 fora do while
+            # B00 = M
 
             # print("div:")
             # print(div)          
-            div = (g0/L0 - np.linalg.multi_dot([dg0.T, B00, dg0]))
 
-            BK = B00 + np.linalg.multi_dot([B00, dg0, dg0.T, B00]) / div
+            # div = (g0/L0 - np.linalg.multi_dot([dg0.T, B00, dg0]))
+
+            #Como coloquei B00 para ser sempre identidade a conta fica assim:
+
+            div = (g0/L0 - dg0.T.dot(dg0))
+
+            # ini = time.time()
+
+            dx1 = -(df0 + (dg0.dot(dg0.T.dot(df0))) / div)
+
+            # BK = dg0.dot(dg0.T) / div
+            # BK = B00 + np.linalg.multi_dot([B00, dg0, dg0.T, B00]) / div
+
+            # end = time.time()
+            # print("Tempo Calculo BK: \t\t" + str(end-ini) + " (s)" )
+
             #Primeira direcao d_alpha
-            dx1 = -(BK.dot(df0))
+            # dx1 = -(BK.dot(df0))
+
+            # dx1 = -(df0 + BK.dot(df0))
             
             if np.linalg.norm(dx1) < 10**(-6):
                 # print("saida1")
@@ -380,7 +391,11 @@ class NeuralNet(object):
                 return self.vet2mat(x0)
             else:
                 #Segunda direcao d_beta
-                dx2 = (L0/g0)*np.linalg.multi_dot([BK, dg0, E])
+                # BK = (B00 + np.linalg.multi_dot([dg0, dg0.T]) / div)*dg0
+                dx2 = (L0/g0)*((dg0 + (dg0.dot(dg0.T.dot(dg0)))/div).dot(E))
+                # dx2 = (L0/g0)*(dg0 + dg0.dot(dg0.T.dot(dg0))/div).dot(E)                
+
+                # dx2 = (L0/g0)*np.linalg.multi_dot([BK, dg0, E])
 
                 if  (df0.T).dot(dx2) > 0:
                     #rho
@@ -390,9 +405,11 @@ class NeuralNet(object):
 
                 #direcao de busca
                 dx = dx1 + r0*dx2
-                d  = dx
+                # d  = dx
                 
-                t  = 1 
+                # t  = 1 
+                t  = 0.01
+
                 xn = x0 + t*dx
 
                 Lx1 = -(L0/g0)*(dg0.T.dot(dx1))
@@ -402,15 +419,20 @@ class NeuralNet(object):
                 mat = self.vet2mat(xn)
                 fn , gn = self.feedforwardFDIPA(mat, x_train, y_train)
   
-                counter[1] = counter[1] + 1
+                # counter[1] = counter[1] + 1
+                # ini = time.time()
+                # while ((fn-f0) > 0 and gn < 0):
+                #     t = 0.9 * t
+                #     xn = x0 + t * dx
+                #     mat = self.vet2mat(xn)
+                #     fn , gn = self.feedforwardFDIPA(mat, x_train, y_train) #feedforward
 
-                while ((fn-f0) > 0):
-                    t = 0.9 * t
-                    xn = x0 + t * dx
-                    mat = self.vet2mat(xn)
-                    fn , gn = self.feedforwardFDIPA(mat, x_train, y_train)#feedforward
-                    counter[1] = counter[1] + 1
-                
+                # print("t = " + str(t))
+                    # counter[1] = counter[1] + 1
+                # end = time.time()
+                # print("Tempo Busca Linear: \t\t" + str(end-ini) + " (s)" )
+
+
                 ###########################################################
                 ################### Criterio de Parada ####################
                 ###########################################################
@@ -424,23 +446,25 @@ class NeuralNet(object):
                 ###################   Parada Forcada   ####################
                 ###########################################################
 
-                x00 = x0
+                # x00 = x0
                 # L00 = L0
+
+                #############################
                 x0  = xn
                 
                 f0   = fn
                 g0   = gn
-                df00 = df0
+                # df00 = df0
                 mat = self.vet2mat(x0)
                 df0 , dg0 = self.dfunFDIPA(mat, x_train, y_train)
                 dg0 = dg0.reshape(dg0.size,1)
+                #############################
                 
-                counter[2] = counter[2] + 1
-                
+                # counter[2] = counter[2] + 1
                 L0 = L + 10**(-8)
-                y = df0 - df00
-                s = x0 - x00
-                B0 = B0 + (y.dot(y.T)) / (y.T.dot(s)) - (np.linalg.multi_dot([B0,s,s.T,B0.T])/(np.linalg.multi_dot([s.T, B0, s])))
+                # y = df0 - df00
+                # s = x0 - x00
+                # B0 = B0 + (y.dot(y.T)) / (y.T.dot(s)) - (np.linalg.multi_dot([B0,s,s.T,B0.T])/(np.linalg.multi_dot([s.T, B0, s])))
         # print("saida3")
         # print(cont)
         return self.vet2mat(xn)
