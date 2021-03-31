@@ -61,7 +61,7 @@ eta = 0.5
 print("comeco:")
 
 ini = time.time()
-# net.SGD2(X_train, y_train, epochs, mini_batch_size, eta)
+# net.SGD(X_train, y_train, epochs, mini_batch_size, eta)
 net.trainFDIPA(X_train, y_train, epochs, mini_batch_size, eta)
 end = time.time()
 

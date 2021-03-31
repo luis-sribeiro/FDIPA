@@ -87,31 +87,22 @@ class NeuralNet(object):
 
     #To Do: Trocar o parametro "training_data" por x_train e y_train separado 
     #Stochastic Gradient Descent
-    def SGD(self, training_data, epochs, mini_batch_size, eta, test_data = None):
-        training_data = list(training_data) #lista (x,y) que representam 
-                                            #entradas(x) e saídas desejadas(y) para treinamento.
-        n = len(training_data)
-        if test_data:
-            test_data = list(test_data)
-            n_test = len(test_data)
-
+    def SGD(self, X, y, epochs, mini_batch_size, eta, test_data = None):
+        n = len(X)
+        display_step = 50
         for j in range(epochs):
-            random.shuffle(training_data)
-            mini_batches = [training_data[k:k+mini_batch_size] for k in range(0, n, mini_batch_size)]
-            
-            #for i in range(0,)
-            #    self.update_mini_batch(x_train[k+tam], y_train[k+tam], eta)
+            p = np.random.permutation(len(X))
+            X = X[p]
+            y = y[p]
+            mini_batches = [(list(zip(X[k:k+mini_batch_size], y[k:k+mini_batch_size]))) for k in range(0, n, mini_batch_size)]
             
             for mini_batch in mini_batches:            
                 self.update_mini_batch(mini_batch, eta)
-            
-            if test_data:
-               print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test))
-            else:
-               print("Epoch {} finalizada".format(j))
 
-            #if j % 100 == 0:
-            #    print("Epoch {}/{}  | Acurácia {}".format(j, epochs, self.feedfowardbatch(training_data)))
+            if j % display_step == 0:
+                predictions = np.asarray([self.feedforward(x) for x in X])
+                accuracy = np.sum(((predictions >= 0.5) == y))/X.shape[0]
+                print("Epoch {}/{}  | Acurácia {:.4f}".format(j, epochs, accuracy))
           
     #Todo : Atualizar essa funcao para trocar  o parametro "mini_batch" por "x_train" e "y_train"
     def update_mini_batch(self, mini_batch, eta):
@@ -470,22 +461,6 @@ class NeuralNet(object):
         return self.vet2mat(xn)
         # return [xn, L, fn, gn, counter, t, d, r0]
 
-    def SGD2(self, X, y, epochs, mini_batch_size, eta, test_data = None):
-        n = len(X)
-        display_step = 50
-        for j in range(epochs):
-            p = np.random.permutation(len(X))
-            X = X[p]
-            y = y[p]
-            mini_batches = [(list(zip(X[k:k+mini_batch_size], y[k:k+mini_batch_size]))) for k in range(0, n, mini_batch_size)]
-            
-            for mini_batch in mini_batches:            
-                self.update_mini_batch(mini_batch, eta)
-
-            if j % display_step == 0:
-                predictions = np.asarray([self.feedforward(x) for x in X])
-                accuracy = np.sum(((predictions >= 0.5) == y))/X.shape[0]
-                print("Epoch {}/{}  | Acurácia {:.4f}".format(j, epochs, accuracy))
 
 # funcao de ativacao sigmoide
 def sigmoid(z):
