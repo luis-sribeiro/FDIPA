@@ -5,8 +5,9 @@ from sklearn import datasets
 import numpy as np
 import copy as cp
 import time
-
 import random
+
+
 
 #Color map for plotting figures
 cmap = matplotlib.colors.ListedColormap(['blue', 'red'])
@@ -28,29 +29,23 @@ plt.scatter(X_train[:,0], X_train[:,1], c = y_train, cmap=cmap)
 plt.show()
 '''
 
-#Acredito que essa seja a forma certa de criar o dataSet
-#Dentro da funcao SGD ele transofrma essa entrada em uma lista
-dataSet = zip(X_train, y_train)
 
-dataSet1 = cp.copy(dataSet)
-dataSet1 = list(dataSet1)
-
+# Arquitetura da rede
 # net = NeuralNet([2, 10, 1])
-# net = NeuralNet([2, 100, 100, 1]) #10300 tempo = 378
-# net = NeuralNet([2, 50, 50, 50, 50, 1]) # 7650 tempo = 152
-# net = NeuralNet([2, 70, 30, 30, 70, 1]) #5310 tempo = 158
-net = NeuralNet([2, 80, 20, 20, 80, 1])  # tempo = 167
+net = NeuralNet([2, 100, 100, 1]) #10300 tempo = 378
+# net = NeuralNet([2, 50, 50, 50, 50, 1])  # 7650 tempo = 152
+# net = NeuralNet([2, 70, 30, 30, 70, 1])  # 5310 tempo = 158
+# net = NeuralNet([2, 80, 20, 20, 80, 1])  # tempo = 167
 
 
 epochs = 1000
 mini_batch_size = 100
-
 eta = 0.5
 iteracoes = 2
 
 print("Comeco:")
 ini = time.time()
-net.SGD(X_train, y_train, epochs, mini_batch_size, eta)
+# net.SGD(X_train, y_train, epochs, mini_batch_size, eta)
 # net.trainFDIPA(X_train, y_train, epochs, mini_batch_size, eta, iteracoes)
 end = time.time()
 print("Fim")
